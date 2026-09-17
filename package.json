@@ -59,7 +59,7 @@
     "react-dom": "18.3.0"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "author": "Dansvic Designs",
   "description": "Free embroidery and print design files for Agbada, Danshiki, Aso-Oke, caps, tees and more. Crafted in Lagos for fashion designers worldwide.",
