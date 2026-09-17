@@ -117,7 +117,7 @@ export async function setUserRole(id: string, role: "admin" | "customer") {
 
 export async function saveSiteContent(fd: FormData) {
   await admin();
-  for (const [k, v] of fd.entries()) {
+  for (const [k, v] of Array.from(fd.entries())) {
     if (typeof v !== "string") continue;
     await db.insert(siteContent).values({ key: k, value: v }).onConflictDoUpdate({ target: siteContent.key, set: { value: v, updatedAt: new Date() } });
   }

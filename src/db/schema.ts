@@ -57,7 +57,10 @@ export const designs = pgTable(
     viewCount: integer("view_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("designs_type_idx").on(t.type), index("designs_category_idx").on(t.category)],
+  (t) => ({
+    typeIdx: index("designs_type_idx").on(t.type),
+    categoryIdx: index("designs_category_idx").on(t.category),
+  })
 );
 
 export const designFiles = pgTable("design_files", {
@@ -80,7 +83,9 @@ export const designTags = pgTable(
       .references(() => designs.id, { onDelete: "cascade" }),
     tag: text("tag").notNull(),
   },
-  (t) => [index("design_tags_tag_idx").on(t.tag)],
+  (t) => ({
+    tagIdx: index("design_tags_tag_idx").on(t.tag),
+  })
 );
 
 // ---------- User activity ----------
@@ -97,7 +102,9 @@ export const downloads = pgTable(
     fileFormat: text("file_format").notNull(),
     downloadedAt: timestamp("downloaded_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("downloads_user_idx").on(t.userId)],
+  (t) => ({
+    userIdx: index("downloads_user_idx").on(t.userId),
+  })
 );
 
 export const savedDesigns = pgTable(
@@ -112,7 +119,9 @@ export const savedDesigns = pgTable(
       .references(() => designs.id, { onDelete: "cascade" }),
     savedAt: timestamp("saved_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("saved_designs_unique").on(t.userId, t.designId)],
+  (t) => ({
+    savedUnique: uniqueIndex("saved_designs_unique").on(t.userId, t.designId),
+  })
 );
 
 export const reviews = pgTable(
@@ -129,7 +138,9 @@ export const reviews = pgTable(
     body: text("body"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("reviews_unique").on(t.userId, t.designId)],
+  (t) => ({
+    reviewsUnique: uniqueIndex("reviews_unique").on(t.userId, t.designId),
+  })
 );
 
 export const reports = pgTable("reports", {
@@ -222,7 +233,9 @@ export const pageViews = pgTable(
     visitorId: text("visitor_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("page_views_created_idx").on(t.createdAt)],
+  (t) => ({
+    createdIdx: index("page_views_created_idx").on(t.createdAt),
+  })
 );
 
 // ---------- Relations ----------
