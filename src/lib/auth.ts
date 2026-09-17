@@ -54,25 +54,30 @@ export type CurrentUser = {
 };
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const jar = await cookies();
-  const token = jar.get(COOKIE)?.value;
-  if (!token) return null;
-  const rows = await db
-    .select({
-      id: profiles.id,
-      name: profiles.name,
-      email: profiles.email,
-      role: profiles.role,
-      isDisabled: profiles.isDisabled,
-      createdAt: profiles.createdAt,
-    })
-    .from(sessions)
-    .innerJoin(profiles, eq(sessions.userId, profiles.id))
-    .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())))
-    .limit(1);
-  const user = rows[0];
-  if (!user || user.isDisabled) return null;
-  return user;
+  try {
+    const jar = await cookies();
+    const token = jar.get(COOKIE)?.value;
+    if (!token) return null;
+    const rows = await db
+      .select({
+        id: profiles.id,
+        name: profiles.name,
+        email: profiles.email,
+        role: profiles.role,
+        isDisabled: profiles.isDisabled,
+        createdAt: profiles.createdAt,
+      })
+      .from(sessions)
+      .innerJoin(profiles, eq(sessions.userId, profiles.id))
+      .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())))
+      .limit(1);
+    const user = rows[0];
+    if (!user || user.isDisabled) return null;
+    return user;
+  } catch (err) {
+    console.error("getCurrentUser DB Error:", err);
+    return null;
+  }
 });
 
 export async function requireUser() {

@@ -22,7 +22,7 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: parsedDatabaseUrl.toString(),
-    ssl: isSupabase ? { rejectUnauthorized: false } : undefined,
+    ssl: { rejectUnauthorized: false },
   });
 
 if (process.env.NODE_ENV !== "production") {

@@ -1,39 +1,11 @@
-@import "tailwindcss";
 @import "@fontsource-variable/plus-jakarta-sans";
 @import "@fontsource-variable/lora";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: "Lora Variable", ui-serif, "Iowan Old Style", "Source Serif Pro", serif;
 
-  --color-brand-50: #f5eefc;
-  --color-brand-100: #e9d9f8;
-  --color-brand-200: #d3b4f1;
-  --color-brand-300: #b98ae8;
-  --color-brand-400: #9a5cdb;
-  --color-brand-500: #7a2fc4;
-  --color-brand-600: #560e96;
-  --color-brand-700: #470b7c;
-  --color-brand-800: #380962;
-  --color-brand-900: #290748;
-
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-fg: var(--accent-fg);
-
-  --radius-xl2: 1.25rem;
-  --radius-xl3: 1.75rem;
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
-  --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.06), 0 24px 48px -20px rgb(86 14 150 / 0.25);
-}
 
 :root {
   --surface: #f5f5f5;

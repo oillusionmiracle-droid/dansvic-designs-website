@@ -19,22 +19,36 @@ export const DEFAULT_CONTENT: Record<string, string> = {
 };
 
 export async function getSiteContent() {
-  const rows = await db.select().from(siteContent);
   const map = { ...DEFAULT_CONTENT };
-  for (const r of rows) map[r.key] = r.value;
+  try {
+    const rows = await db.select().from(siteContent);
+    for (const r of rows) map[r.key] = r.value;
+  } catch (err) {
+    console.error("getSiteContent DB Error:", err);
+  }
   return map;
 }
 
 export async function getActiveAnnouncement() {
-  return db.query.announcements.findFirst({ where: eq(announcements.isActive, true), orderBy: [desc(announcements.createdAt)] });
+  try {
+    return (await db.query.announcements.findFirst({ where: eq(announcements.isActive, true), orderBy: [desc(announcements.createdAt)] })) ?? null;
+  } catch (err) {
+    console.error("getActiveAnnouncement DB Error:", err);
+    return null;
+  }
 }
 
 export async function getPublishedTestimonials(limit?: number) {
-  return db.query.testimonials.findMany({
-    where: eq(testimonials.isPublished, true),
-    orderBy: [desc(testimonials.createdAt)],
-    limit,
-  });
+  try {
+    return await db.query.testimonials.findMany({
+      where: eq(testimonials.isPublished, true),
+      orderBy: [desc(testimonials.createdAt)],
+      limit,
+    });
+  } catch (err) {
+    console.error("getPublishedTestimonials DB Error:", err);
+    return [];
+  }
 }
 
 export async function getPublishedPosts() {

@@ -4,11 +4,16 @@ import { profiles } from "@/db/schema";
 import { createSession, verifyPassword } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  const { email, password } = (await req.json()) as Record<string, string | undefined>;
-  if (!email || !password) return Response.json({ error: "Email and password are required." }, { status: 400 });
-  const user = await db.query.profiles.findFirst({ where: eq(profiles.email, email.trim().toLowerCase()) });
-  if (!user || !verifyPassword(password, user.passwordHash)) return Response.json({ error: "Incorrect email or password." }, { status: 401 });
-  if (user.isDisabled) return Response.json({ error: "This account has been disabled. Contact support." }, { status: 403 });
-  await createSession(user.id);
-  return Response.json({ ok: true });
+  try {
+    const { email, password } = (await req.json()) as Record<string, string | undefined>;
+    if (!email || !password) return Response.json({ error: "Email and password are required." }, { status: 400 });
+    const user = await db.query.profiles.findFirst({ where: eq(profiles.email, email.trim().toLowerCase()) });
+    if (!user || !verifyPassword(password, user.passwordHash)) return Response.json({ error: "Incorrect email or password." }, { status: 401 });
+    if (user.isDisabled) return Response.json({ error: "This account has been disabled. Contact support." }, { status: 403 });
+    await createSession(user.id);
+    return Response.json({ ok: true });
+  } catch (err) {
+    console.error("Login API Error:", err);
+    return Response.json({ error: "Database connection timed out or failed. Please check database settings." }, { status: 500 });
+  }
 }

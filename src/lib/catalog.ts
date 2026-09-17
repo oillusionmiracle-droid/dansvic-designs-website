@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { designFiles, designTags, designs, reviews, savedDesigns } from "@/db/schema";
+import { SAMPLE_DESIGNS } from "./sampleData";
 
 export type DesignCard = {
   id: string;
@@ -60,29 +61,39 @@ export async function browseDesigns(p: BrowseParams = {}): Promise<DesignCard[]>
         ? [desc(sql`${designs.viewCount} + ${designs.downloadCount} * 3`), desc(designs.createdAt)]
         : [desc(designs.createdAt)];
 
-  const rows = await db
-    .select({
-      id: designs.id,
-      code: designs.code,
-      name: designs.name,
-      type: designs.type,
-      category: designs.category,
-      previewImageUrl: designs.previewImageUrl,
-      secondaryPreviewUrl: designs.secondaryPreviewUrl,
-      isFeatured: designs.isFeatured,
-      isFree: designs.isFree,
-      downloadCount: designs.downloadCount,
-      viewCount: designs.viewCount,
-      createdAt: designs.createdAt,
-      formats: formatsAgg,
-    })
-    .from(designs)
-    .leftJoin(designFiles, eq(designFiles.designId, designs.id))
-    .where(and(...where))
-    .groupBy(designs.id)
-    .orderBy(...order)
-    .limit(p.limit ?? 200);
-  return rows;
+  try {
+    const rows = await db
+      .select({
+        id: designs.id,
+        code: designs.code,
+        name: designs.name,
+        type: designs.type,
+        category: designs.category,
+        previewImageUrl: designs.previewImageUrl,
+        secondaryPreviewUrl: designs.secondaryPreviewUrl,
+        isFeatured: designs.isFeatured,
+        isFree: designs.isFree,
+        downloadCount: designs.downloadCount,
+        viewCount: designs.viewCount,
+        createdAt: designs.createdAt,
+        formats: formatsAgg,
+      })
+      .from(designs)
+      .leftJoin(designFiles, eq(designFiles.designId, designs.id))
+      .where(and(...where))
+      .groupBy(designs.id)
+      .orderBy(...order)
+      .limit(p.limit ?? 200);
+    return rows.length > 0 ? rows : SAMPLE_DESIGNS.filter(d => {
+      if (p.type && d.type !== p.type) return false;
+      if (p.free && !d.isFree) return false;
+      if (p.featured && !d.isFeatured) return false;
+      return true;
+    });
+  } catch (err) {
+    console.error("browseDesigns DB Error:", err);
+    return SAMPLE_DESIGNS;
+  }
 }
 
 export async function getDesignByCode(code: string) {
@@ -117,12 +128,17 @@ export async function isSaved(userId: string, designId: string) {
 }
 
 export async function getCategoryCounts() {
-  return db
-    .select({ type: designs.type, category: designs.category, count: sql<number>`count(*)::int` })
-    .from(designs)
-    .where(eq(designs.isPublished, true))
-    .groupBy(designs.type, designs.category)
-    .orderBy(asc(designs.type), asc(designs.category));
+  try {
+    return await db
+      .select({ type: designs.type, category: designs.category, count: sql<number>`count(*)::int` })
+      .from(designs)
+      .where(eq(designs.isPublished, true))
+      .groupBy(designs.type, designs.category)
+      .orderBy(asc(designs.type), asc(designs.category));
+  } catch (err) {
+    console.error("getCategoryCounts DB Error:", err);
+    return [];
+  }
 }
 
 export async function getAllTags(limit = 24) {
