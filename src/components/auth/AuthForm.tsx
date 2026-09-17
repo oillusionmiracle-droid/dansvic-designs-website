@@ -49,7 +49,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
           <div>
             <label htmlFor="password" className="text-sm font-semibold">Password</label>
-            <input id="password" type="password" required minLength={8} autoComplete={mode === "login" ? "current-password" : "new-password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={field} />
+            <input id="password" type="password" required minLength={mode === "register" ? 8 : 1} autoComplete={mode === "login" ? "current-password" : "new-password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={field} />
             {mode === "register" && <p className="mt-1 text-xs text-ink-3">At least 8 characters.</p>}
           </div>
           {error && <p role="alert" className="rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-3 text-sm font-medium">{error}</p>}
