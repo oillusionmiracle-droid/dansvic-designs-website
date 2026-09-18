@@ -17,7 +17,7 @@ export function Hero({ content, categories, previews }: Props) {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
-        <Image src="/images/hero.jpg" alt="" fill priority className="object-cover opacity-30 dark:opacity-40" sizes="100vw" />
+        <Image src="/images/hero.jpg" alt="" fill priority className="object-cover opacity-0 dark:opacity-40" sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/80 to-surface" />
       </div>
       <div className="mx-auto max-w-[1600px] px-4 md:px-6 pt-14 md:pt-24 pb-10 grid gap-12 lg:grid-cols-[1.1fr_1fr] items-center">
