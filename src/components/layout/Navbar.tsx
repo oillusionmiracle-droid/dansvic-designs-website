@@ -1,5 +1,6 @@
 "use client";
-import { Logo } from "@/components/ui/Logo";\nimport Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
+import Link from "next/link";
 import { usePathname,useRouter } from "next/navigation";
 import { useEffect,useState } from "react";
 import { Search,Menu,X,ArrowUpRight,UserRound } from "lucide-react";
