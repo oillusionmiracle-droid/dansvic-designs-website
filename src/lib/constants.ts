@@ -7,10 +7,10 @@ export const SITE = {
   whatsapp: "https://wa.me/2349015886855",
   address: "Festac Town, Lagos, Nigeria",
   socials: {
-    instagram: "https://instagram.com/dansvicdesigns",
-    facebook: "https://facebook.com/dansvicdesigns",
-    tiktok: "https://tiktok.com/@dansvicdesigns",
-    pinterest: "https://pinterest.com/dansvicdesigns",
+    instagram: "https://www.instagram.com/dansvic_designs",
+    facebook: "https://www.facebook.com/share/1DySSvXjgY/?mibextid=wwXIfr",
+    tiktok: "https://www.tiktok.com/@dansvic_designs",
+    pinterest: "https://pin.it/5N4yGu2eC",
   },
 };
 

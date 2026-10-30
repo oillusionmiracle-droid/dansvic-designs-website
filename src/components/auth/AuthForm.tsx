@@ -10,7 +10,8 @@ import { spring } from "@/components/motion/Reveal";
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/designs";
+  const requestedNext = sp.get("next");
+  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\") ? requestedNext : null;
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -19,12 +20,20 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const res = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) return setError(data.error ?? "Something went wrong");
-    router.refresh();
-    router.push(next);
+    try {
+      const res = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error ?? "Unable to sign in right now. Please try again.");
+        return;
+      }
+      router.push(next ?? data?.redirectTo ?? "/designs");
+      router.refresh();
+    } catch {
+      setError("Could not connect. Please check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const field = "mt-1.5 h-12 w-full rounded-2xl border border-line bg-surface px-4 text-base focus:bg-surface-2";
@@ -59,9 +68,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </form>
         <p className="mt-6 text-center text-sm text-ink-3">
           {mode === "login" ? (
-            <>New here? <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-semibold text-accent">Create an account</Link></>
+            <>New here? <Link href={`/register?next=${encodeURIComponent(next ?? "/designs")}`} className="font-semibold text-accent">Create an account</Link></>
           ) : (
-            <>Already have an account? <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold text-accent">Log in</Link></>
+            <>Already have an account? <Link href={`/login?next=${encodeURIComponent(next ?? "/designs")}`} className="font-semibold text-accent">Log in</Link></>
           )}
         </p>
         <p className="mt-4 text-center text-xs text-ink-3">By continuing you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.</p>

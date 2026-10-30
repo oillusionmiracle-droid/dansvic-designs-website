@@ -44,6 +44,9 @@ export default async function AccountPage() {
               </div>
             ))}
           </dl>
+          {user.role === "admin" && (
+            <Link href="/admin" className="mt-6 block rounded-2xl bg-accent px-5 py-3 text-center font-semibold text-accent-fg">Open admin dashboard</Link>
+          )}
           <div className="mt-6 grid grid-cols-2 gap-3">
             <Link href="/account/downloads" className="rounded-2xl bg-surface p-4 border border-line hover:border-accent">
               <p className="text-3xl font-bold text-accent">{stats?.downloads ?? 0}</p>
