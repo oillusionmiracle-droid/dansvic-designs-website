@@ -1,5 +1,5 @@
 "use client";
-import { motion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
 
 export const spring = { type: "spring", stiffness: 260, damping: 28, mass: 0.9 } as const;
@@ -11,11 +11,12 @@ const fadeUp: Variants = {
 };
 
 export function Reveal({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const reduce = useReducedMotion();
   return (
     <motion.div
       className={className}
       variants={fadeUp}
-      initial="hidden"
+      initial={reduce ? false : "hidden"}
       whileInView="show"
       viewport={{ once: true, margin: "-60px" }}
       transition={{ ...spring, delay }}

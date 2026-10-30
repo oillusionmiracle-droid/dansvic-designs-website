@@ -1,0 +1,1 @@
+import {Suspense} from 'react';import {RecoveryForm} from '@/components/auth/RecoveryForm';export const metadata={title:'Reset password',robots:{index:false,follow:false}};export default function Page(){return <Suspense><RecoveryForm reset/></Suspense>}

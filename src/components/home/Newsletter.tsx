@@ -9,8 +9,8 @@ export function Newsletter({ title, subtitle }: { title: string; subtitle: strin
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setState("loading");
-    const res = await fetch("/api/newsletter", { method: "POST", body: JSON.stringify({ email }), headers: { "Content-Type": "application/json" } });
-    setState(res.ok ? "done" : "error");
+    try { const res = await fetch("/api/newsletter", { method: "POST", body: JSON.stringify({ email }), headers: { "Content-Type": "application/json" } });
+    setState(res.ok ? "done" : "error"); } catch { setState("error"); }
   }
   return (
     <div className="relative overflow-hidden rounded-xl3 bg-brand-600 text-white px-6 py-12 md:px-14 md:py-16">

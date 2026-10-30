@@ -1,23 +1,3 @@
 "use client";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-
-/**
- * First-party page-view beacon feeding the admin analytics dashboard.
- * TODO (later): drop Google Analytics (gtag.js) in here for richer
- * traffic-source and geographic reporting once a GA property exists.
- */
-export function Tracker() {
-  const pathname = usePathname();
-  useEffect(() => {
-    if (pathname.startsWith("/admin")) return;
-    let vid = localStorage.getItem("dd-vid");
-    if (!vid) {
-      vid = crypto.randomUUID();
-      localStorage.setItem("dd-vid", vid);
-    }
-    const body = JSON.stringify({ path: pathname, referrer: document.referrer, visitorId: vid });
-    fetch("/api/track", { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true }).catch(() => {});
-  }, [pathname]);
-  return null;
-}
+import {usePathname} from 'next/navigation';import {useEffect} from 'react';
+export function Tracker(){const path=usePathname();useEffect(()=>{if(path.startsWith('/admin'))return;function track(){try{if(localStorage.getItem('dd-analytics')!=='accepted')return;let id=localStorage.getItem('dd-vid');if(!id){id=crypto.randomUUID();localStorage.setItem('dd-vid',id)}fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path,visitorId:id,referrer:document.referrer,consent:true}),keepalive:true}).catch(()=>{})}catch{}}track();window.addEventListener('dansvic-consent',track);return()=>window.removeEventListener('dansvic-consent',track)},[path]);return null}

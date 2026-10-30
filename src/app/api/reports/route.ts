@@ -1,11 +1,2 @@
-import { db } from "@/db";
-import { reports } from "@/db/schema";
-import { handle, requireUser } from "@/lib/auth";
-
-export const POST = handle(async (req: Request) => {
-  const user = await requireUser();
-  const { designId, reason, details } = (await req.json()) as { designId?: string; reason?: string; details?: string };
-  if (!designId || !reason) return Response.json({ error: "Invalid report" }, { status: 400 });
-  await db.insert(reports).values({ designId, userId: user.id, reason, details: details?.trim() ?? "" });
-  return Response.json({ ok: true });
-});
+import {eq,and} from 'drizzle-orm';import {db} from '@/db';import {reports,designs} from '@/db/schema';import {handle,requireUser} from '@/lib/auth';import {REPORT_REASONS} from '@/lib/constants';import {assertSameOrigin,rateLimit,readJson,uuid,text} from '@/lib/security';
+export const POST=handle(async(req:Request)=>{assertSameOrigin(req);const u=await requireUser();await rateLimit(req,'reports',5,3600,u.id);const b=await readJson(req),designId=uuid(b.designId),reason=text(b.reason,'Reason',1,40),details=text(b.details,'Details',5,3000);if(!REPORT_REASONS.some(r=>r.value===reason))return Response.json({error:'Choose a valid reason.'},{status:400});if(!await db.query.designs.findFirst({where:and(eq(designs.id,designId),eq(designs.isPublished,true))}))return Response.json({error:'Design not found.'},{status:404});await db.insert(reports).values({designId,userId:u.id,reason,details});return Response.json({ok:true})});

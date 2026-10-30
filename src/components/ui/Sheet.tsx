@@ -1,18 +1,24 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 const spring = { type: "spring", stiffness: 380, damping: 34 } as const;
 
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const previous=document.activeElement as HTMLElement|null;
+    const focusable=()=>Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button,a[href],input,select,textarea,[tabindex="0"]')||[]).filter(el=>!el.hasAttribute('disabled'));
+    const frame=requestAnimationFrame(()=>focusable()[0]?.focus());
+    const onKey = (e: KeyboardEvent) => {if(e.key==="Escape")onClose();if(e.key==="Tab"){const items=focusable(),first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}};
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      cancelAnimationFrame(frame);
+      previous?.focus();
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
@@ -33,6 +39,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={title}

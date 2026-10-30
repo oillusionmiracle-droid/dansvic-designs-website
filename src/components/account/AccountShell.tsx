@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/Section";
 import { cn } from "@/lib/utils";
 
 const tabs = [
+  { href: "/account/security", label: "Security" },
   { href: "/account", label: "Profile" },
   { href: "/account/downloads", label: "Download History" },
   { href: "/account/saved", label: "Saved Designs" },

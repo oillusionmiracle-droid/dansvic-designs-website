@@ -7,14 +7,14 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   hero_eyebrow: "Embroidery · Monogramming · Print",
   hero_title: "Designs that make every outfit tell a story.",
   hero_subtitle:
-    "Free, production-ready embroidery and print files for Agbada, Danshiki, Aso-Oke, caps, tees and more — crafted in Lagos, downloaded worldwide.",
-  hero_cta_primary: "Download Free Designs",
-  hero_cta_secondary: "See My Designs",
+    "Embroidery, monogramming and print illustration for your next creation. Explore the library or enquire about a custom design.",
+  hero_cta_primary: "Explore the library",
+  hero_cta_secondary: "Browse designs",
   about_blurb:
     "Dansvic Designs began in 2020 out of a love for embroidery and became a brand in 2021 with one belief: everyone deserves to look unique and special.",
   banner_text: "",
   banner_link: "",
-  newsletter_title: "New designs land several times a week.",
+  newsletter_title: "A little inspiration, in your inbox.",
   newsletter_subtitle: "Join the list and be the first to stitch them.",
 };
 

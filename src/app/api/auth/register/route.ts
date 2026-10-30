@@ -1,16 +1,5 @@
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { createSession, hashPassword } from "@/lib/auth";
-
-export async function POST(req: Request) {
-  const { name, email, password } = (await req.json()) as Record<string, string | undefined>;
-  if (!name?.trim() || !email || !password) return Response.json({ error: "All fields are required." }, { status: 400 });
-  if (password.length < 8) return Response.json({ error: "Password must be at least 8 characters." }, { status: 400 });
-  const normalized = email.trim().toLowerCase();
-  const exists = await db.query.profiles.findFirst({ where: eq(profiles.email, normalized) });
-  if (exists) return Response.json({ error: "An account with that email already exists." }, { status: 409 });
-  const [user] = await db.insert(profiles).values({ name: name.trim(), email: normalized, passwordHash: hashPassword(password) }).returning();
-  await createSession(user.id);
-  return Response.json({ ok: true });
-}
+import { createSession,hashPassword,handle } from "@/lib/auth";
+import { assertSameOrigin,readJson,rateLimit,emailAddress,text } from "@/lib/security";
+export const POST=handle(async(req:Request)=>{assertSameOrigin(req);await rateLimit(req,'register',5,3600);const b=await readJson(req);const name=text(b.name,'Name',2,100),email=emailAddress(b.email),password=text(b.password,'Password',12,128);const [user]=await db.insert(profiles).values({name,email,passwordHash:await hashPassword(password),role:'customer'}).onConflictDoNothing({target:profiles.email}).returning({id:profiles.id});if(!user)return Response.json({error:'Unable to create this account. If you already registered, try signing in.'},{status:409});await createSession(user.id);return Response.json({ok:true})});

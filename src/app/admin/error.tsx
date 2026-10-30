@@ -1,0 +1,2 @@
+"use client";
+export default function AdminError({reset}:{error:Error;reset:()=>void}){return <div className="p-8 border border-line bg-surface-2"><h2 className="font-serif text-3xl">We couldn’t complete that action.</h2><p className="text-sm text-ink-3 mt-4">Check the field values and upload limits. If this continues, try again in a moment.</p><button className="editorial-button mt-6" onClick={reset}>Try again</button></div>}

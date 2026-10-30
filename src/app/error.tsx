@@ -1,0 +1,3 @@
+"use client";
+import Link from 'next/link';
+export default function ErrorPage({reset}:{error:Error;reset:()=>void}){return <div className="max-w-lg mx-auto px-5 py-20"><p className="eyebrow">A SMALL INTERRUPTION</p><h1 className="font-serif text-4xl mt-5">Let’s try that again.</h1><p className="text-sm text-ink-3 mt-5">We couldn’t load this page just now. Your account and saved designs are still here.</p><div className="mt-7 flex gap-5 items-center"><button onClick={reset} className="editorial-button">Try again</button><Link href="/" className="text-sm underline">Back to the studio</Link></div></div>}

@@ -6,10 +6,10 @@ import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Log in" };
 
-export default async function Page({ searchParams }: { searchParams: { next?: string } }) {
+export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const user = await getCurrentUser();
   if (user) {
-    const next = searchParams.next;
+    const next = (await searchParams).next;
     const safeNext = next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : null;
     redirect(safeNext ?? (user.role === "admin" ? "/admin" : "/account"));
   }

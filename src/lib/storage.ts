@@ -1,66 +1,18 @@
 import "server-only";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { createHmac, timingSafeEqual } from "node:crypto";
-
-/**
- * Private file storage. Design files live OUTSIDE /public so they are never
- * served directly. Access happens only through /api/files/[token] after a
- * signed, time-limited token has been issued to an authenticated user.
- * Swap the fs calls for Supabase Storage / S3 later without touching callers.
- */
-export const STORAGE_ROOT = path.join(process.cwd(), "storage");
-const SECRET = process.env.DOWNLOAD_SIGNING_SECRET ?? "dansvic-dev-signing-secret-change-me";
-const TTL_SECONDS = 10 * 60;
-
-export function resolveStoragePath(relative: string) {
-  const full = path.normalize(path.join(STORAGE_ROOT, relative));
-  if (!full.startsWith(STORAGE_ROOT)) throw new Error("Invalid storage path");
-  return full;
-}
-
-export async function saveDesignFile(designId: string, format: string, data: Buffer) {
-  const dir = path.join(STORAGE_ROOT, "designs", designId);
-  await fs.mkdir(dir, { recursive: true });
-  const rel = path.join("designs", designId, `${format.toUpperCase()}-${Date.now()}.${format.toLowerCase()}`);
-  await fs.writeFile(path.join(STORAGE_ROOT, rel), data);
-  return rel;
-}
-
-export async function savePublicUpload(name: string, data: Buffer) {
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(dir, { recursive: true });
-  const safe = name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const file = `${Date.now()}-${safe}`;
-  await fs.writeFile(path.join(dir, file), data);
-  return `/uploads/${file}`;
-}
-
-type Payload = { f: string; u: string; n: string; exp: number };
-
-function b64url(s: string) {
-  return Buffer.from(s).toString("base64url");
-}
-
-export function signDownload(fileId: string, userId: string, fileName: string) {
-  const payload: Payload = { f: fileId, u: userId, n: fileName, exp: Math.floor(Date.now() / 1000) + TTL_SECONDS };
-  const body = b64url(JSON.stringify(payload));
-  const sig = createHmac("sha256", SECRET).update(body).digest("base64url");
-  return `${body}.${sig}`;
-}
-
-export function verifyDownloadToken(token: string): Payload | null {
-  const [body, sig] = token.split(".");
-  if (!body || !sig) return null;
-  const expected = createHmac("sha256", SECRET).update(body).digest("base64url");
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  try {
-    const payload = JSON.parse(Buffer.from(body, "base64url").toString()) as Payload;
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
+import { createHmac,timingSafeEqual,randomUUID } from "node:crypto";
+import sharp from 'sharp';
+import { pool } from '@/db';
+import { signingSecret } from './security';
+export const STORAGE_ROOT=path.join(process.cwd(),'storage');
+const MAX_FILE=3*1024*1024;
+export function resolveStoragePath(relative:string){const full=path.resolve(STORAGE_ROOT,relative);if(!full.startsWith(STORAGE_ROOT+path.sep))throw Error('Invalid storage path');return full}
+export function isSample(data:Buffer){return data.subarray(0,100).toString().startsWith('DANSVIC-')&&data.subarray(0,100).includes(Buffer.from('-SAMPLE'))}
+async function store(data:Buffer,mime:string,isPublic:boolean){if(!data.length||data.length>MAX_FILE)throw Error('Uploads must be smaller than 3 MB.');const id=randomUUID();await pool.query('insert into app_private.media(id,body,mime_type,is_public) values($1,$2,$3,$4)',[id,data,mime,isPublic]);return id}
+export async function saveDesignFile(designId:string,format:string,data:Buffer){if(!['EMB','DST','DSB','CDR','PDF'].includes(format.toUpperCase()))throw Error('Unsupported file format.');if(isSample(data))throw Error('Sample files cannot be published as downloads.');if(format==='PDF'&&!data.subarray(0,5).equals(Buffer.from('%PDF-')))throw Error('Upload a valid PDF file.');return 'db:'+await store(data,'application/octet-stream',false)}
+export async function savePublicUpload(name:string,data:Buffer){if(!/\.(png|jpe?g|webp|avif)$/i.test(name))throw Error('Upload a JPG, PNG, WebP or AVIF image.');if(data.length>MAX_FILE)throw Error('Images must be smaller than 3 MB.');const image=await sharp(data,{limitInputPixels:24000000}).rotate().resize({width:1600,height:2000,fit:'inside',withoutEnlargement:true}).webp({quality:84}).toBuffer();return '/api/media/'+await store(image,'image/webp',true)}
+export async function readDesignFile(storagePath:string){if(storagePath.startsWith('db:')){const id=storagePath.slice(3);if(!/^[a-f0-9-]{36}$/.test(id))throw Error('Invalid file');const {rows}=await pool.query('select body from app_private.media where id=$1 and is_public=false',[id]);if(!rows[0])throw Error('File not found');return rows[0].body as Buffer}const data=await fs.readFile(resolveStoragePath(storagePath));if(isSample(data))throw Error('A verified file is not available yet.');return data}
+type Payload={f:string;u:string;n:string;exp:number};
+export function signDownload(fileId:string,userId:string,fileName:string){const payload:Payload={f:fileId,u:userId,n:fileName,exp:Math.floor(Date.now()/1000)+600};const body=Buffer.from(JSON.stringify(payload)).toString('base64url');return body+'.'+createHmac('sha256',signingSecret()).update(body).digest('base64url')}
+export function verifyDownloadToken(token:string):Payload|null{if(token.length>2048)return null;const parts=token.split('.');if(parts.length!==2)return null;const[body,sig]=parts;const expected=createHmac('sha256',signingSecret()).update(body).digest('base64url');const a=Buffer.from(sig),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))return null;try{const p=JSON.parse(Buffer.from(body,'base64url').toString());if(typeof p.f!=='string'||typeof p.u!=='string'||typeof p.n!=='string'||!Number.isFinite(p.exp)||p.exp<=Date.now()/1000||p.exp>Date.now()/1000+610)return null;return p}catch{return null}}

@@ -14,7 +14,7 @@ export default async function Inbox() {
   ]);
   return (
     <>
-      <AdminHeader title="Reports & Messages" />
+      <AdminHeader title="Reports & Messages"><a href="/api/admin/subscribers" className="text-sm underline">Export newsletter subscribers</a></AdminHeader>
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="p-0">
           <h2 className="font-bold p-4 border-b border-line">Design reports ({reps.filter((x) => x.r.status === "open").length} open)</h2>

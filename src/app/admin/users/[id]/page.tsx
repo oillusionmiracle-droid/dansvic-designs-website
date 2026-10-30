@@ -1,3 +1,4 @@
+import { ResetLink } from "@/components/admin/ResetLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
@@ -16,7 +17,7 @@ export default async function UserActivity({ params }: { params: Promise<{ id: s
   return (
     <>
       <AdminHeader title={user.name}><span className="text-ink-3">{user.email}</span></AdminHeader>
-      <Card className="p-0 overflow-x-auto">
+      <ResetLink userId={user.id}/><Card className="p-0 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-ink-3 border-b border-line"><tr><th className="p-3">When</th><th className="p-3">Design</th><th className="p-3">Format</th></tr></thead>
           <tbody className="divide-y divide-line">

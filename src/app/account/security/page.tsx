@@ -1,0 +1,2 @@
+import {redirect} from 'next/navigation';import {getCurrentUser} from '@/lib/auth';import {AccountShell} from '@/components/account/AccountShell';import {PasswordForm} from '@/components/account/PasswordForm';
+export const dynamic='force-dynamic';export default async function Page(){if(!await getCurrentUser())redirect('/login?next=/account/security');return <AccountShell active="/account/security" title="Account security"><PasswordForm/></AccountShell>}

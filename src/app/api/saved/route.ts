@@ -1,17 +1,2 @@
-import { and, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { savedDesigns } from "@/db/schema";
-import { handle, requireUser } from "@/lib/auth";
-
-export const POST = handle(async (req: Request) => {
-  const user = await requireUser();
-  const { designId } = (await req.json()) as { designId?: string };
-  if (!designId) return Response.json({ error: "designId required" }, { status: 400 });
-  const existing = await db.query.savedDesigns.findFirst({ where: and(eq(savedDesigns.userId, user.id), eq(savedDesigns.designId, designId)) });
-  if (existing) {
-    await db.delete(savedDesigns).where(eq(savedDesigns.id, existing.id));
-    return Response.json({ saved: false });
-  }
-  await db.insert(savedDesigns).values({ userId: user.id, designId });
-  return Response.json({ saved: true });
-});
+import {and,eq} from 'drizzle-orm';import {db} from '@/db';import {savedDesigns,designs} from '@/db/schema';import {handle,requireUser} from '@/lib/auth';import {assertSameOrigin,rateLimit,readJson,uuid} from '@/lib/security';
+export const POST=handle(async(req:Request)=>{assertSameOrigin(req);const u=await requireUser();await rateLimit(req,'saved',60,900,u.id);const id=uuid((await readJson(req)).designId);const d=await db.query.designs.findFirst({where:and(eq(designs.id,id),eq(designs.isPublished,true))});if(!d)return Response.json({error:'Design not found.'},{status:404});const existing=await db.query.savedDesigns.findFirst({where:and(eq(savedDesigns.userId,u.id),eq(savedDesigns.designId,id))});if(existing){await db.delete(savedDesigns).where(eq(savedDesigns.id,existing.id));return Response.json({saved:false})}await db.insert(savedDesigns).values({userId:u.id,designId:id}).onConflictDoNothing();return Response.json({saved:true})});

@@ -4,9 +4,12 @@ import { redirect } from "next/navigation";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { announcements, blogPosts, contactMessages, designFiles, designTags, designs, faqItems, profiles, reports, siteContent, testimonials } from "@/db/schema";
+import { safeImage, safeLink } from "@/lib/security";
+import { DEFAULT_CONTENT } from "@/lib/content";
 import { getCurrentUser } from "@/lib/auth";
 import { saveDesignFile, savePublicUpload } from "@/lib/storage";
 import { slugify } from "@/lib/utils";
+import { EMBROIDERY_CATEGORIES, PRINT_CATEGORIES } from "@/lib/constants";
 import { ALL_FORMATS } from "@/lib/constants";
 
 async function admin() {
@@ -14,8 +17,8 @@ async function admin() {
   if (!u || u.role !== "admin") throw new Error("Admin access required");
   return u;
 }
-const str = (fd: FormData, k: string) => (fd.get(k) as string | null)?.toString().trim() ?? "";
-const num = (fd: FormData, k: string) => (str(fd, k) ? Number(str(fd, k)) : null);
+const str = (fd: FormData, k: string) => { const value=fd.get(k); if(value===null)return ""; if(typeof value!=="string"||value.length>20000)throw new Error("Please shorten the field and try again."); return value.trim(); };
+const num = (fd: FormData,k:string) => {const value=str(fd,k);if(!value)return null;const n=Number(value);if(!Number.isInteger(n)||n<0||n>100000000)throw new Error("Enter a valid non-negative number.");return n;};
 const bool = (fd: FormData, k: string) => fd.get(k) === "on" || fd.get(k) === "true";
 const refreshAll = () => {
   revalidatePath("/", "layout");
@@ -42,12 +45,16 @@ async function handleFiles(designId: string, fd: FormData) {
 async function handleImage(fd: FormData, key: string, fallback: string | null) {
   const f = fd.get(key);
   if (f instanceof File && f.size > 0) return savePublicUpload(f.name, Buffer.from(await f.arrayBuffer()));
-  return str(fd, `${key}_url`) || fallback;
+  return safeImage(str(fd, `${key}_url`) || fallback);
 }
 
 export async function saveDesign(fd: FormData) {
   await admin();
   const id = str(fd, "id");
+  const kind=str(fd,"type"),category=str(fd,"category");
+  if(!["embroidery","print"].includes(kind)||!(kind==="embroidery"?EMBROIDERY_CATEGORIES:PRINT_CATEGORIES).some(c=>c===category))throw new Error("Choose a valid type and category.");
+  if(str(fd,"name").length<2||str(fd,"name").length>160)throw new Error("Design names must be 2–160 characters.");
+  const code=str(fd,"code");if(code&&!/^DD-\d{4,8}$/.test(code))throw new Error("Use a design code such as DD-0001.");
   const preview = await handleImage(fd, "preview", null);
   const secondary = await handleImage(fd, "secondary", null);
   const values = {
@@ -105,20 +112,24 @@ export async function deleteDesignFile(fileId: string) {
 
 export async function setUserDisabled(id: string, disabled: boolean) {
   await admin();
-  await db.update(profiles).set({ isDisabled: disabled }).where(eq(profiles.id, id));
+  const actor=await admin();if(actor.id===id)throw new Error("You cannot disable your own admin account.");
+  await db.transaction(async tx=>{await tx.execute(sql`select pg_advisory_xact_lock(30261030)`);const target=await tx.query.profiles.findFirst({where:eq(profiles.id,id)});if(disabled&&target?.role==="admin"&&!target.isDisabled){const others=await tx.select({n:sql<number>`count(*)::int`}).from(profiles).where(and(eq(profiles.role,"admin"),eq(profiles.isDisabled,false)));if(others[0].n<=1)throw new Error("Keep at least one active admin.");}await tx.update(profiles).set({isDisabled:disabled}).where(eq(profiles.id,id));});
   revalidatePath("/admin/users");
 }
 
 export async function setUserRole(id: string, role: "admin" | "customer") {
   await admin();
-  await db.update(profiles).set({ role }).where(eq(profiles.id, id));
+  const actor=await admin();if(!["admin","customer"].includes(role))throw new Error("Invalid role.");if(actor.id===id)throw new Error("You cannot change your own admin role.");
+  await db.transaction(async tx=>{await tx.execute(sql`select pg_advisory_xact_lock(30261030)`);const target=await tx.query.profiles.findFirst({where:eq(profiles.id,id)});if(role==="customer"&&target?.role==="admin"&&!target.isDisabled){const others=await tx.select({n:sql<number>`count(*)::int`}).from(profiles).where(and(eq(profiles.role,"admin"),eq(profiles.isDisabled,false)));if(others[0].n<=1)throw new Error("Keep at least one active admin.");}await tx.update(profiles).set({role}).where(eq(profiles.id,id));});
   revalidatePath("/admin/users");
 }
 
 export async function saveSiteContent(fd: FormData) {
   await admin();
   for (const [k, v] of Array.from(fd.entries())) {
-    if (typeof v !== "string") continue;
+    if (typeof v !== "string" || !(k in DEFAULT_CONTENT)) continue;
+    if(v.length>3000)throw new Error("Please shorten this text.");
+    if(k.endsWith("_link")&&v)safeLink(v);
     await db.insert(siteContent).values({ key: k, value: v }).onConflictDoUpdate({ target: siteContent.key, set: { value: v, updatedAt: new Date() } });
   }
   refreshAll();
@@ -127,7 +138,7 @@ export async function saveSiteContent(fd: FormData) {
 export async function saveAnnouncement(fd: FormData) {
   await admin();
   await db.update(announcements).set({ isActive: false });
-  if (str(fd, "message")) await db.insert(announcements).values({ message: str(fd, "message"), linkUrl: str(fd, "linkUrl") || null, linkLabel: str(fd, "linkLabel") || null, isActive: true });
+  if (str(fd, "message")) await db.insert(announcements).values({ message: str(fd, "message"), linkUrl: safeLink(str(fd, "linkUrl")) || null, linkLabel: str(fd, "linkLabel") || null, isActive: true });
   refreshAll();
 }
 
@@ -178,11 +189,13 @@ export async function deletePost(id: string) {
 
 export async function setReportStatus(id: string, status: string) {
   await admin();
+  if(!["open","reviewed","resolved","closed"].includes(status))throw new Error("Invalid status.");
   await db.update(reports).set({ status }).where(eq(reports.id, id));
   revalidatePath("/admin/inbox");
 }
 export async function setMessageStatus(id: string, status: string) {
   await admin();
+  if(!["new","read","handled","resolved","closed"].includes(status))throw new Error("Invalid status.");
   await db.update(contactMessages).set({ status }).where(eq(contactMessages.id, id));
   revalidatePath("/admin/inbox");
 }

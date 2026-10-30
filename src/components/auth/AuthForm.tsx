@@ -58,14 +58,15 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
           <div>
             <label htmlFor="password" className="text-sm font-semibold">Password</label>
-            <input id="password" type="password" required minLength={mode === "register" ? 8 : 1} autoComplete={mode === "login" ? "current-password" : "new-password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={field} />
-            {mode === "register" && <p className="mt-1 text-xs text-ink-3">At least 8 characters.</p>}
+            <input id="password" type="password" required minLength={mode === "register" ? 12 : 1} autoComplete={mode === "login" ? "current-password" : "new-password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={field} />
+            {mode === "register" && <p className="mt-1 text-xs text-ink-3">At least 12 characters. Use a unique passphrase.</p>}
           </div>
           {error && <p role="alert" className="rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-3 text-sm font-medium">{error}</p>}
           <Button type="submit" size="lg" className="w-full" disabled={busy}>
             {busy ? "One moment…" : mode === "login" ? "Log in" : "Create account"}
           </Button>
         </form>
+        {mode === "login" && <p className="mt-4 text-sm"><Link href="/forgot-password" className="text-accent underline underline-offset-4">Forgot your password?</Link></p>}
         <p className="mt-6 text-center text-sm text-ink-3">
           {mode === "login" ? (
             <>New here? <Link href={`/register?next=${encodeURIComponent(next ?? "/designs")}`} className="font-semibold text-accent">Create an account</Link></>

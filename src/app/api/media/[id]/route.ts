@@ -1,0 +1,2 @@
+import {pool} from '@/db';
+export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){const{id}=await params;if(!/^[0-9a-f-]{36}$/i.test(id))return new Response('Not found',{status:404});const{rows}=await pool.query('select body,mime_type from app_private.media where id=$1 and is_public=true',[id]);if(!rows[0])return new Response('Not found',{status:404});return new Response(new Uint8Array(rows[0].body),{headers:{'Content-Type':rows[0].mime_type,'Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'}})}

@@ -10,8 +10,8 @@ export function ContactForm() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setState("busy");
-    const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    setState(res.ok ? "done" : "error");
+    try { const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    setState(res.ok ? "done" : "error"); } catch { setState("error"); }
   }
   const field = "mt-1.5 w-full rounded-2xl border border-line bg-surface-2 px-4 text-base";
   if (state === "done")
@@ -27,11 +27,11 @@ export function ContactForm() {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="c-name" className="text-sm font-semibold">Name</label>
-          <input id="c-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`${field} h-12`} />
+          <input id="c-name" required minLength={2} maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`${field} h-12`} />
         </div>
         <div>
           <label htmlFor="c-email" className="text-sm font-semibold">Email</label>
-          <input id="c-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={`${field} h-12`} />
+          <input id="c-email" type="email" required maxLength={254} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={`${field} h-12`} />
         </div>
       </div>
       <fieldset>
@@ -47,7 +47,7 @@ export function ContactForm() {
       </fieldset>
       <div>
         <label htmlFor="c-msg" className="text-sm font-semibold">Message</label>
-        <textarea id="c-msg" required rows={6} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className={`${field} py-3`} />
+        <textarea id="c-msg" required minLength={10} maxLength={5000} rows={6} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className={`${field} py-3`} />
       </div>
       {state === "error" && <p className="text-sm text-red-600">Couldn’t send — please try again.</p>}
       <Button type="submit" size="lg" disabled={state === "busy"}>{state === "busy" ? "Sending…" : "Send message"}</Button>

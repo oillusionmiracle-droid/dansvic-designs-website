@@ -4,15 +4,19 @@ import "./globals.css";
 import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { PrivacyChoices } from "@/components/analytics/PrivacyChoices";
 import { Tracker } from "@/components/analytics/Tracker";
 import { getCurrentUser } from "@/lib/auth";
 import { getActiveAnnouncement } from "@/lib/content";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.SITE_URL || "https://dansvic-designs-website-eight.vercel.app"),
+  openGraph: { type: "website", siteName: "Dansvic Designs", title: "Dansvic Designs — Tradition, in every thread.", description: "Embroidery, monogramming and print artwork for your next creation.", images: [{url:"/opengraph-image",width:1200,height:630}] },
+  twitter: {card:"summary_large_image", title:"Dansvic Designs",description:"Tradition, in every thread.",images:["/opengraph-image"]},
   title: { default: `${SITE.name} — Embroidery & Print Designs`, template: `%s · ${SITE.name}` },
   description:
-    "Free embroidery and print design files for Agbada, Danshiki, Aso-Oke, caps, tees and more. Crafted in Lagos for fashion designers worldwide.",
+    "Explore embroidery, monogramming and print artwork for Agbada, Danshiki, Aso-Oke, caps and tees. Custom design enquiries welcome.",
 };
 
 export const viewport: Viewport = {
@@ -39,7 +43,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {children}
           </main>
           <Footer />
-          <Tracker />
+          <Tracker /><PrivacyChoices />
         </Providers>
       </body>
     </html>

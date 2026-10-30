@@ -69,9 +69,9 @@ export function DesignForm({ design, files, tags }: { design?: Design; files?: D
       <div className="space-y-5">
         <Card className="space-y-4">
           <h2 className="font-bold">Preview images</h2>
-          <Field label="Primary preview (upload)"><input type="file" name="preview" accept="image/*" className="mt-1 block text-sm" /></Field>
+          <Field label="Primary preview (upload)"><input type="file" name="preview" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-1 block text-sm" /></Field>
           <Field label="…or image URL"><input name="preview_url" defaultValue={design?.previewImageUrl ?? ""} className={input} /></Field>
-          <Field label="Secondary preview (upload, optional)"><input type="file" name="secondary" accept="image/*" className="mt-1 block text-sm" /></Field>
+          <Field label="Secondary preview (upload, optional)"><input type="file" name="secondary" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-1 block text-sm" /></Field>
           <Field label="…or image URL"><input name="secondary_url" defaultValue={design?.secondaryPreviewUrl ?? ""} className={input} /></Field>
         </Card>
         <Card className="space-y-3">

@@ -22,7 +22,7 @@ export function DesignGrid({
       whileInView="show"
       viewport={{ once: true, margin: "-30px" }}
       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
-      className={masonry ? "masonry" : "grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"}
+      className={masonry ? "masonry" : "grid gap-x-5 gap-y-10 grid-cols-2 lg:grid-cols-3"}
     >
       {designs.map((d, i) => (
         <DesignCard key={d.id} design={d} index={i} masonry={masonry} />

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { designs, downloads, pageViews, profiles } from "@/db/schema";
 import { AdminHeader, Card } from "@/components/admin/ui";
@@ -10,17 +10,17 @@ export default async function AdminHome() {
   const [[totals], [visits], topViewed, topDownloaded, byCategory, sources, countries, dailyViews] = await Promise.all([
     db.select({
       designs: sql<number>`(select count(*) from ${designs})::int`,
-      users: sql<number>`(select count(*) from ${profiles})::int`,
-      downloads: sql<number>`(select count(*) from ${downloads})::int`,
-      downloads30: sql<number>`(select count(*) from ${downloads} where ${downloads.downloadedAt} >= ${since})::int`,
+      users: sql<number>`(select count(*) from ${profiles} where ${profiles.isDisabled}=false)::int`,
+      downloads: sql<number>`(select count(*) from ${downloads} where ${downloads.userId} in (select ${profiles.id} from ${profiles} where ${profiles.isDisabled}=false))::int`,
+      downloads30: sql<number>`(select count(*) from ${downloads} where ${downloads.downloadedAt} >= ${since} and ${downloads.userId} in (select ${profiles.id} from ${profiles} where ${profiles.isDisabled}=false))::int`,
     }).from(sql`(select 1) as one`),
-    db.select({ views: sql<number>`count(*)::int`, visitors: sql<number>`count(distinct ${pageViews.visitorId})::int` }).from(pageViews).where(gte(pageViews.createdAt, since)),
+    db.select({ views: sql<number>`count(*)::int`, visitors: sql<number>`count(distinct ${pageViews.visitorId})::int` }).from(pageViews).where(and(gte(pageViews.createdAt, since),sql`${pageViews.visitorId} not like 'seed-%'`)),
     db.select({ code: designs.code, name: designs.name, n: designs.viewCount }).from(designs).orderBy(desc(designs.viewCount)).limit(6),
     db.select({ code: designs.code, name: designs.name, n: designs.downloadCount }).from(designs).orderBy(desc(designs.downloadCount)).limit(6),
     db.select({ category: designs.category, type: designs.type, n: sql<number>`coalesce(sum(${designs.downloadCount}),0)::int`, v: sql<number>`coalesce(sum(${designs.viewCount}),0)::int` }).from(designs).groupBy(designs.category, designs.type).orderBy(desc(sql`sum(${designs.downloadCount})`)),
-    db.select({ source: pageViews.source, n: sql<number>`count(*)::int` }).from(pageViews).where(gte(pageViews.createdAt, since)).groupBy(pageViews.source).orderBy(desc(sql`count(*)`)).limit(8),
-    db.select({ country: pageViews.country, n: sql<number>`count(distinct ${pageViews.visitorId})::int` }).from(pageViews).where(gte(pageViews.createdAt, since)).groupBy(pageViews.country).orderBy(desc(sql`count(distinct ${pageViews.visitorId})`)).limit(8),
-    db.select({ day: sql<string>`to_char(date_trunc('day', ${pageViews.createdAt}), 'DD Mon')`, n: sql<number>`count(*)::int` }).from(pageViews).where(gte(pageViews.createdAt, new Date(Date.now() - 14 * 86400_000))).groupBy(sql`date_trunc('day', ${pageViews.createdAt})`).orderBy(sql`date_trunc('day', ${pageViews.createdAt})`),
+    db.select({ source: pageViews.source, n: sql<number>`count(*)::int` }).from(pageViews).where(and(gte(pageViews.createdAt, since),sql`${pageViews.visitorId} not like 'seed-%'`)).groupBy(pageViews.source).orderBy(desc(sql`count(*)`)).limit(8),
+    db.select({ country: pageViews.country, n: sql<number>`count(distinct ${pageViews.visitorId})::int` }).from(pageViews).where(and(gte(pageViews.createdAt, since),sql`${pageViews.visitorId} not like 'seed-%'`)).groupBy(pageViews.country).orderBy(desc(sql`count(distinct ${pageViews.visitorId})`)).limit(8),
+    db.select({ day: sql<string>`to_char(date_trunc('day', ${pageViews.createdAt}), 'DD Mon')`, n: sql<number>`count(*)::int` }).from(pageViews).where(and(gte(pageViews.createdAt, new Date(Date.now() - 14 * 86400_000)),sql`${pageViews.visitorId} not like 'seed-%'`)).groupBy(sql`date_trunc('day', ${pageViews.createdAt})`).orderBy(sql`date_trunc('day', ${pageViews.createdAt})`),
   ]);
   void eq;
   const max = Math.max(1, ...dailyViews.map((d) => d.n));

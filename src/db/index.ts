@@ -26,7 +26,7 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: parsedDatabaseUrl.toString(),
-    ssl: { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: true },
     max: 2,
     idleTimeoutMillis: 1000,
     connectionTimeoutMillis: 10000,

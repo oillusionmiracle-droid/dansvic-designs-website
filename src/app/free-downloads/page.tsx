@@ -10,9 +10,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     <BrowsePage
       sp={sp}
       forced={{ free: true }}
-      eyebrow="100% free · no limits"
+      eyebrow="THE DOWNLOAD LIBRARY"
       title="Free Downloads"
-      description="Every free design in one place. Create an account, download all formats, and re-download any time."
+      description="Verified free files, when available. Each listing shows its formats and specifications. More files will appear here as they are added."
     />
   );
 }

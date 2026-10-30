@@ -1,14 +1,2 @@
-import { db } from "@/db";
-import { reviews } from "@/db/schema";
-import { handle, requireUser } from "@/lib/auth";
-
-export const POST = handle(async (req: Request) => {
-  const user = await requireUser();
-  const { designId, rating, body } = (await req.json()) as { designId?: string; rating?: number; body?: string };
-  if (!designId || !rating || rating < 1 || rating > 5) return Response.json({ error: "Invalid review" }, { status: 400 });
-  await db
-    .insert(reviews)
-    .values({ designId, userId: user.id, rating, body: body?.trim() || null })
-    .onConflictDoUpdate({ target: [reviews.userId, reviews.designId], set: { rating, body: body?.trim() || null, createdAt: new Date() } });
-  return Response.json({ ok: true });
-});
+import {and,eq} from 'drizzle-orm';import {db} from '@/db';import {reviews,downloads,designs} from '@/db/schema';import {handle,requireUser} from '@/lib/auth';import {assertSameOrigin,rateLimit,readJson,uuid,text} from '@/lib/security';
+export const POST=handle(async(req:Request)=>{assertSameOrigin(req);const u=await requireUser();await rateLimit(req,'reviews',10,3600,u.id);const b=await readJson(req),id=uuid(b.designId),rating=b.rating,body=b.body?text(b.body,'Review',1,2000):null;if(typeof rating!=='number'||!Number.isInteger(rating)||rating<1||rating>5)return Response.json({error:'Choose a rating from 1 to 5.'},{status:400});const d=await db.query.designs.findFirst({where:and(eq(designs.id,id),eq(designs.isPublished,true))});const downloaded=await db.query.downloads.findFirst({where:and(eq(downloads.designId,id),eq(downloads.userId,u.id))});if(!d||!downloaded)return Response.json({error:'Download this design before leaving a review.'},{status:403});await db.insert(reviews).values({designId:id,userId:u.id,rating,body}).onConflictDoUpdate({target:[reviews.userId,reviews.designId],set:{rating,body,createdAt:new Date()}});return Response.json({ok:true})});

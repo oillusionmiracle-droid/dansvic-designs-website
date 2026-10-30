@@ -1,8 +1,8 @@
 import "server-only";
 import { and, asc, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { designFiles, designTags, designs, reviews, savedDesigns } from "@/db/schema";
-import { SAMPLE_DESIGNS } from "./sampleData";
+import { designFiles, designTags, designs, reviews, savedDesigns, profiles } from "@/db/schema";
+
 
 export type DesignCard = {
   id: string;
@@ -32,13 +32,13 @@ export type BrowseParams = {
   featured?: boolean;
 };
 
-const formatsAgg = sql<string[]>`coalesce(array_agg(distinct ${designFiles.fileFormat}) filter (where ${designFiles.fileFormat} is not null), '{}')`;
+const formatsAgg = sql<string[]>`coalesce(array_agg(distinct ${designFiles.fileFormat}) filter (where ${designFiles.fileFormat} is not null and ${designFiles.storagePath} like 'db:%'), '{}')`;
 
 export async function browseDesigns(p: BrowseParams = {}): Promise<DesignCard[]> {
   const where: SQL[] = [eq(designs.isPublished, true)];
   if (p.type) where.push(eq(designs.type, p.type));
   if (p.category) where.push(eq(designs.category, p.category));
-  if (p.free) where.push(eq(designs.isFree, true));
+  if (p.free) {where.push(eq(designs.isFree,true));where.push(inArray(designs.id,db.select({id:designFiles.designId}).from(designFiles).where(sql`${designFiles.storagePath} like 'db:%'`)));}
   if (p.featured) where.push(eq(designs.isFeatured, true));
   if (p.popularity === "top") where.push(sql`${designs.downloadCount} >= 50`);
   if (p.popularity === "trending") where.push(sql`${designs.viewCount} >= 100`);
@@ -84,15 +84,10 @@ export async function browseDesigns(p: BrowseParams = {}): Promise<DesignCard[]>
       .groupBy(designs.id)
       .orderBy(...order)
       .limit(p.limit ?? 200);
-    return rows.length > 0 ? rows : SAMPLE_DESIGNS.filter(d => {
-      if (p.type && d.type !== p.type) return false;
-      if (p.free && !d.isFree) return false;
-      if (p.featured && !d.isFeatured) return false;
-      return true;
-    });
+    return rows;
   } catch (err) {
     console.error("browseDesigns DB Error:", err);
-    return SAMPLE_DESIGNS;
+    return [];
   }
 }
 
@@ -101,12 +96,12 @@ export async function getDesignByCode(code: string) {
     where: and(eq(designs.code, code.toUpperCase()), eq(designs.isPublished, true)),
     with: { files: true, tags: true },
   });
-  return design ?? null;
+  return design ? {...design, files:design.files.filter(f=>f.storagePath.startsWith("db:"))} : null;
 }
 
 export async function getDesignReviews(designId: string) {
   return db.query.reviews.findMany({
-    where: eq(reviews.designId, designId),
+    where: and(eq(reviews.designId, designId),inArray(reviews.userId,db.select({id:profiles.id}).from(profiles).where(eq(profiles.isDisabled,false)))),
     with: { user: { columns: { name: true } } },
     orderBy: [desc(reviews.createdAt)],
   });
@@ -116,7 +111,7 @@ export async function getRatingSummary(designId: string) {
   const [row] = await db
     .select({ avg: sql<number>`coalesce(avg(${reviews.rating}), 0)::float`, count: sql<number>`count(*)::int` })
     .from(reviews)
-    .where(eq(reviews.designId, designId));
+    .where(and(eq(reviews.designId, designId),inArray(reviews.userId,db.select({id:profiles.id}).from(profiles).where(eq(profiles.isDisabled,false)))));
   return { avg: Number(row?.avg ?? 0), count: Number(row?.count ?? 0) };
 }
 

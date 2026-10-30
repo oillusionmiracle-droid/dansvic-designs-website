@@ -130,12 +130,12 @@ export function DesignActions({ design, files, signedIn, initiallySaved, myRevie
               {f.format} <span className="font-normal text-ink-3">{fmtSize(f.size)}</span>
             </span>
           ))}
-          {files.length === 0 && <span className="text-sm text-ink-3">Files coming soon.</span>}
+          {files.length === 0 && <span className="text-sm text-ink-3">A verified download is not attached yet. Contact the studio to enquire.</span>}
         </div>
       </div>
 
       <Button size="lg" className="w-full" disabled={!files.length} onClick={() => gate("download")}>
-        ↓ Download all formats
+        {files.length ? "Download available formats" : "Download not available yet"}
       </Button>
       <div className="grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={() => gate("review")}>{myReview ? "Edit review" : "Rate & review"}</Button>
@@ -154,7 +154,7 @@ export function DesignActions({ design, files, signedIn, initiallySaved, myRevie
       </AnimatePresence>
 
       <Sheet open={sheet === "auth"} onClose={() => setSheet(null)} title="Create a free account to download">
-        <p className="text-ink-3">Downloads are free and unlimited — an account keeps your download history so you can re-download any time.</p>
+        <p className="text-ink-3">An account keeps your saved designs and download history together. Available formats are listed on each design.</p>
         <div className="mt-6 grid gap-2">
           <ButtonLink href={`/register?next=/design/${design.code}`} size="lg">Create account</ButtonLink>
           <ButtonLink href={`/login?next=/design/${design.code}`} size="lg" variant="secondary">Log in</ButtonLink>

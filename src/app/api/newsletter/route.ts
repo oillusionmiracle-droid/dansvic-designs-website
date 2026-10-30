@@ -1,9 +1,2 @@
-import { db } from "@/db";
-import { newsletterSubscribers } from "@/db/schema";
-
-export async function POST(req: Request) {
-  const { email } = (await req.json()) as { email?: string };
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Response.json({ error: "Invalid email" }, { status: 400 });
-  await db.insert(newsletterSubscribers).values({ email: email.toLowerCase() }).onConflictDoNothing();
-  return Response.json({ ok: true });
-}
+import {db} from '@/db';import {newsletterSubscribers} from '@/db/schema';import {handle} from '@/lib/auth';import {assertSameOrigin,rateLimit,readJson,emailAddress} from '@/lib/security';
+export const POST=handle(async(req:Request)=>{assertSameOrigin(req);await rateLimit(req,'newsletter',5,3600);const email=emailAddress((await readJson(req)).email);await db.insert(newsletterSubscribers).values({email}).onConflictDoNothing();return Response.json({ok:true})});
