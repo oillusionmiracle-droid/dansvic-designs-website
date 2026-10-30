@@ -29,7 +29,7 @@ export async function rateLimit(req:Request,scope:string,limit=20,windowSeconds=
   const ip=req.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()||req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';
   const key=createHmac('sha256',signingSecret()).update(`${scope}:${identity??ip}`).digest('hex');
   const windowStart=Math.floor(Date.now()/1000/windowSeconds)*windowSeconds;
-  const {rows}=await pool.query(`insert into app_private.rate_limits(key,window_start,hits,expires_at) values($1,$2,1,to_timestamp($2+$3)) on conflict(key) do update set hits=case when app_private.rate_limits.window_start=excluded.window_start then least(app_private.rate_limits.hits+1,100000) else 1 end,window_start=excluded.window_start,expires_at=excluded.expires_at returning hits`,[key,windowStart,windowSeconds]);
+  const {rows}=await pool.query(`insert into app_private.rate_limits(key,window_start,hits,expires_at) values($1,$2,1,to_timestamp($2::bigint+$3::bigint)) on conflict(key) do update set hits=case when app_private.rate_limits.window_start=excluded.window_start then least(app_private.rate_limits.hits+1,100000) else 1 end,window_start=excluded.window_start,expires_at=excluded.expires_at returning hits`,[key,windowStart,windowSeconds]);
   if(rows[0].hits===1) await pool.query('delete from app_private.rate_limits where key in (select key from app_private.rate_limits where expires_at<now() limit 100)');
   if(rows[0].hits>limit)throw Response.json({error:'Too many requests. Please try again later.'},{status:429,headers:{'Retry-After':String(windowSeconds-Math.floor(Date.now()/1000-windowStart))}});
 }
