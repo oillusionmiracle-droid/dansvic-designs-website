@@ -9,7 +9,11 @@ if (!databaseUrl) {
 }
 
 const parsedDatabaseUrl = new URL(databaseUrl);
-const isSupabase = parsedDatabaseUrl.hostname.endsWith("supabase.com");
+// Vercel instances must share connections through Supavisor transaction mode.
+// Session mode reserves a backend for every idle client and exhausts small pools.
+if (parsedDatabaseUrl.hostname.endsWith(".pooler.supabase.com") && (!parsedDatabaseUrl.port || parsedDatabaseUrl.port === "5432")) {
+  parsedDatabaseUrl.port = "6543";
+}
 
 parsedDatabaseUrl.searchParams.delete("sslmode");
 parsedDatabaseUrl.searchParams.delete("uselibpqcompat");
@@ -23,10 +27,11 @@ export const pool =
   new Pool({
     connectionString: parsedDatabaseUrl.toString(),
     ssl: { rejectUnauthorized: false },
+    max: 2,
+    idleTimeoutMillis: 1000,
+    connectionTimeoutMillis: 10000,
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__arenaNextJsPostgresqlPool = pool;
-}
+globalForDb.__arenaNextJsPostgresqlPool = pool;
 
 export const db = drizzle(pool, { schema });
