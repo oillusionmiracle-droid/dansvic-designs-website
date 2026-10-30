@@ -1,4 +1,5 @@
 import "server-only";
+import { SITE_IMAGES } from "./site-images";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { announcements, blogPosts, faqItems, siteContent, testimonials } from "@/db/schema";
@@ -16,6 +17,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   banner_link: "",
   newsletter_title: "A little inspiration, in your inbox.",
   newsletter_subtitle: "Join the list and be the first to stitch them.",
+  ...Object.fromEntries(SITE_IMAGES.map(image => [image.key, image.src])),
 };
 
 export async function getSiteContent() {

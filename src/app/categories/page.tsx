@@ -1,3 +1,4 @@
+import {getSiteContent} from "@/lib/content";
 import type { Metadata } from "next";
 import { getCategoryCounts } from "@/lib/catalog";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
@@ -7,7 +8,7 @@ export const metadata: Metadata = { title: "Categories" };
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const cats = await getCategoryCounts();
+  const [cats,content] = await Promise.all([getCategoryCounts(),getSiteContent()]);
   const emb = cats.filter((c) => c.type === "embroidery");
   const print = cats.filter((c) => c.type === "print");
   return (
@@ -16,11 +17,11 @@ export default async function Page() {
       <Container className="space-y-14">
         <section>
           <h2 className="text-2xl font-bold mb-5">Embroidery</h2>
-          <CategoryGrid categories={emb} />
+          <CategoryGrid categories={emb} content={content} />
         </section>
         <section>
           <h2 className="text-2xl font-bold mb-5">Print</h2>
-          <CategoryGrid categories={print} />
+          <CategoryGrid categories={print} content={content} />
         </section>
       </Container>
     </>

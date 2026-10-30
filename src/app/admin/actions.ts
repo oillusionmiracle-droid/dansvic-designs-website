@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { announcements, blogPosts, contactMessages, designFiles, designTags, designs, faqItems, profiles, reports, siteContent, testimonials } from "@/db/schema";
+import { SITE_IMAGES } from "@/lib/site-images";
 import { safeImage, safeLink } from "@/lib/security";
 import { DEFAULT_CONTENT } from "@/lib/content";
 import { getCurrentUser } from "@/lib/auth";
@@ -127,11 +128,28 @@ export async function setUserRole(id: string, role: "admin" | "customer") {
 export async function saveSiteContent(fd: FormData) {
   await admin();
   for (const [k, v] of Array.from(fd.entries())) {
-    if (typeof v !== "string" || !(k in DEFAULT_CONTENT)) continue;
+    if (typeof v !== "string" || !(k in DEFAULT_CONTENT) || k.startsWith("image_")) continue;
     if(v.length>3000)throw new Error("Please shorten this text.");
     if(k.endsWith("_link")&&v)safeLink(v);
     await db.insert(siteContent).values({ key: k, value: v }).onConflictDoUpdate({ target: siteContent.key, set: { value: v, updatedAt: new Date() } });
   }
+  refreshAll();
+}
+
+export async function saveSiteImage(fd: FormData) {
+  await admin();
+  const key=str(fd,"key");
+  if(!SITE_IMAGES.some(image=>image.key===key)) throw new Error("Unknown image location.");
+  const upload=fd.get("image");
+  const url=str(fd,"image_url");
+  let value:string;
+  if(upload instanceof File && upload.size>0){
+    if(upload.size>3*1024*1024)throw new Error("Images must be smaller than 3 MB.");
+    value=await savePublicUpload(upload.name,Buffer.from(await upload.arrayBuffer()));
+  }else if(url){ value=safeImage(url)!; }
+  else if(fd.get("restore")==="true"){value=SITE_IMAGES.find(image=>image.key===key)!.src;}
+  else throw new Error("Choose an image or enter a secure image URL.");
+  await db.insert(siteContent).values({key,value}).onConflictDoUpdate({target:siteContent.key,set:{value,updatedAt:new Date()}});
   refreshAll();
 }
 

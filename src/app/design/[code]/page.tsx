@@ -1,3 +1,4 @@
+import {getSiteContent} from "@/lib/content";
 import {StyleReference} from "@/components/designs/StyleReference";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -27,11 +28,12 @@ export default async function DesignPage({ params }: { params: Promise<{ code: s
   const design = await getDesignByCode(code);
   if (!design) notFound();
   const user = await getCurrentUser();
-  const [reviews, rating, saved, related] = await Promise.all([
+  const [reviews, rating, saved, related, content] = await Promise.all([
     getDesignReviews(design.id),
     getRatingSummary(design.id),
     user ? isSaved(user.id, design.id) : Promise.resolve(false),
     browseDesigns({ type: design.type as "embroidery" | "print", category: design.category, limit: 7 }),
+    getSiteContent(),
   ]);
   const myReview = user ? reviews.find((r) => r.userId === user.id) : undefined;
   const isEmb = design.type === "embroidery";
@@ -81,7 +83,7 @@ export default async function DesignPage({ params }: { params: Promise<{ code: s
             <p className="mb-4 text-xs mt-6 text-accent">{design.files.length ? "Download formats verified for availability. Please check software compatibility before use." : "Design study · preview only. Contact the studio for a custom file or a verified download."}</p>
             <p className="mt-6 font-serif text-lg leading-relaxed text-ink-2 whitespace-pre-line">{design.description}</p>
 
-            {isEmb && <StyleReference category={design.category}/>}
+            {isEmb && <StyleReference category={design.category} content={content}/>}
             <dl className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
               {specs.map(([k, v]) => (
                 <div key={k} className="rounded-2xl bg-surface p-4 border border-line">

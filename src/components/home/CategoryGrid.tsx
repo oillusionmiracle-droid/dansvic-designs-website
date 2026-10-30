@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { imageFor } from "@/lib/site-images";
 import { CATEGORY_IMAGES, slugifyCategory } from "@/lib/constants";
 import { Stagger, StaggerItem } from "@/components/motion/Reveal";
 
-export function CategoryGrid({ categories }: { categories: { category: string; type: string; count: number }[] }) {
+export function CategoryGrid({ categories, content }: { categories: { category: string; type: string; count: number }[]; content: Record<string,string> }) {
   return (
     <Stagger className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
       {categories.map((c) => (
@@ -13,7 +14,7 @@ export function CategoryGrid({ categories }: { categories: { category: string; t
             className="group relative block aspect-[4/5] overflow-hidden rounded-xl3 bg-surface-3 shadow-soft"
           >
             <Image
-              src={CATEGORY_IMAGES[c.category] ?? "/images/hero.jpg"}
+              src={imageFor(content,"image_category_"+slugifyCategory(c.category))}
               alt={c.category}
               fill
               sizes="(max-width: 768px) 50vw, 20vw"
