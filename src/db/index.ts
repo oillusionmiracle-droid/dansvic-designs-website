@@ -26,7 +26,7 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: parsedDatabaseUrl.toString(),
-    ssl: { rejectUnauthorized: true },
+    ssl: { rejectUnauthorized: false },
     max: 2,
     idleTimeoutMillis: 1000,
     connectionTimeoutMillis: 10000,
@@ -35,3 +35,4 @@ export const pool =
 globalForDb.__arenaNextJsPostgresqlPool = pool;
 
 export const db = drizzle(pool, { schema });
+
