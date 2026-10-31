@@ -40,7 +40,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <div className="mx-auto max-w-md px-4 py-16 md:py-24">
       <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={spring} className="glass rounded-xl3 border border-line shadow-lift p-7 md:p-9">
-        <Logo className="h-11 w-11" />
+        <Logo className="h-12 w-auto" />
         <h1 className="mt-5 text-3xl font-bold tracking-tight">{mode === "login" ? "Welcome back" : "Create your free account"}</h1>
         <p className="mt-2 text-ink-3">
           {mode === "login" ? "Log in to download designs and see your history." : "Unlimited free downloads, saved designs and re-downloads — forever."}
